@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     SQLITE_DATABASE_URL: str = "sqlite:///auth_service.db"
-    DATABASE_URL: str
+    POSTGRES_DB_URL: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
