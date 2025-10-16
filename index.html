@@ -275,7 +275,7 @@
     createApp({
       setup() {
         const state = reactive({
-          baseUrl: localStorage.getItem('auth_base_url') || 'http://localhost:8000',
+          baseUrl: localStorage.getItem('auth_base_url') || 'https://auth-service-v2-rqoi.onrender.com',
           currentTab: 'login',
           user: JSON.parse(localStorage.getItem('auth_user') || 'null'),
           tokens: JSON.parse(localStorage.getItem('auth_tokens') || '{"access_token": "", "refresh_token": ""}'),
