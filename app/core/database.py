@@ -3,9 +3,6 @@ from sqlalchemy.orm import DeclarativeBase
 from app.core.config import settings
 
 
-SQLITE_DATABASE_URL = settings.SQLITE_DATABASE_URL
-
-
 DATABASE_URL = settings.POSTGRES_DB_URL
 
 
