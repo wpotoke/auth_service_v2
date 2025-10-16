@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routers.users import router as user_router
 
 app = FastAPI(
-    title="FastAPI ecommerce - Интеренет магазин",
+    title="FastAPI user service - сервис аунтификации",
     version="0.1.0",
 )
 
