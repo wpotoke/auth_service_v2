@@ -1,0 +1,22 @@
+[MASTER]
+ignore=venv,auth_service_v2/app/migrations,task_service_v2/app/migrations
+jobs=1
+persistent=yes
+
+[MESSAGES CONTROL]
+disable =
+    missing-docstring,
+    too-few-public-methods,
+    too-many-arguments,
+    too-many-locals,
+    singleton-comparison
+
+[FORMAT]
+max-line-length=100
+
+[DESIGN]
+max-args=5
+max-locals=15
+
+[REPORTS]
+output-format = colorized
