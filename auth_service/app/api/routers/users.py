@@ -4,15 +4,15 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status, Path
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import Field
-from auth_service_v2.app.schemas.users import UserCreate, User
-from auth_service_v2.app.auth.dependencies import get_user_service
-from auth_service_v2.app.services.users import UserService
-from auth_service_v2.app.auth.security import (
+from auth_service.app.schemas.users import UserCreate, User
+from auth_service.app.auth.dependencies import get_user_service
+from auth_service.app.services.users import UserService
+from auth_service.app.auth.security import (
     create_access_token,
     create_refresh_token,
     get_email_current_user,
 )
-from auth_service_v2.app.schemas.tokens import TokenGroup, RefreshTokenRequest
+from auth_service.app.schemas.tokens import TokenGroup, RefreshTokenRequest
 
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -69,6 +69,7 @@ async def get_me(
 @router.delete("/{user_id}", status_code=status.HTTP_200_OK)
 async def delete_user(
     user_id: Annotated[int, Path(ge=1)],
+    user_email: Annotated[str, Depends(get_email_current_user)],
     user_service: Annotated[UserService, Depends(get_user_service)],
 ):
-    await user_service.delete_user(user_id=user_id)
+    await user_service.delete_user(user_id=user_id, email=user_email)

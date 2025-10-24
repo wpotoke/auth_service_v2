@@ -3,9 +3,9 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
-from auth_service_v2.app.models.users import User as UserModel
-from auth_service_v2.app.schemas.users import UserCreate
-from auth_service_v2.app.auth.security import verify_password, hash_password
+from auth_service.app.models.users import User as UserModel
+from auth_service.app.schemas.users import UserCreate
+from auth_service.app.auth.security import verify_password, hash_password
 
 
 class UserRepository:

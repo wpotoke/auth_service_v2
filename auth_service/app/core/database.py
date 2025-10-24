@@ -1,9 +1,9 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
-from auth_service_v2.app.core.config import settings
+from auth_service.app.core.config import settings
 
 
-DATABASE_URL = settings.POSTGRES_DB_URL
+DATABASE_URL = settings.POSTGRES_AUTH_DB_URL
 
 
 async_engine = create_async_engine(DATABASE_URL, echo=True)
@@ -12,5 +12,4 @@ async_session_maker = async_sessionmaker(
 )
 
 
-class Base(DeclarativeBase):
-    pass
+class Base(DeclarativeBase): ...

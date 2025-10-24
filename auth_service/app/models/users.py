@@ -1,6 +1,6 @@
 from sqlalchemy import Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
-from auth_service_v2.app.core.database import Base
+from auth_service.app.core.database import Base
 
 
 class User(Base):

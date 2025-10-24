@@ -1,3 +1,9 @@
+import sys
+import os
+
+project_root = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+sys.path.insert(0, project_root)
+
 import asyncio
 from logging.config import fileConfig
 
@@ -19,7 +25,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-database_url = settings.POSTGRES_DB_URL
+database_url = settings.POSTGRES_AUTH_DB_URL
 if database_url:
     config.set_main_option("sqlalchemy.url", database_url)
 # add your model's MetaData object here

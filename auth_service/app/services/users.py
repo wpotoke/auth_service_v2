@@ -1,21 +1,21 @@
 # ruff: noqa: E712
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from auth_service_v2.app.models.users import User as UserModel
-from auth_service_v2.app.schemas.users import UserCreate
-from auth_service_v2.app.repositories.users import UserRepository
-from auth_service_v2.app.auth.security import (
+from auth_service.app.models.users import User as UserModel
+from auth_service.app.schemas.users import UserCreate
+from auth_service.app.repositories.users import UserRepository
+from auth_service.app.auth.security import (
     create_access_token,
     get_email_refresh_access_token,
     create_refresh_token,
 )
-from auth_service_v2.app.core.exceptions import (
+from auth_service.app.core.exceptions import (
     NotFoundException,
     ConflictException,
     BusinessException,
 )
-from auth_service_v2.app.schemas.tokens import TokenGroup, RefreshTokenBase
-from auth_service_v2.app.core.config import settings
+from auth_service.app.schemas.tokens import TokenGroup, RefreshTokenBase
+from auth_service.app.core.config import settings
 
 
 class UserService:
@@ -42,10 +42,12 @@ class UserService:
         user_db = await self.user_repo.create(user)
         return user_db
 
-    async def delete_user(self, user_id: int) -> bool:
-        user_db = await self.user_repo.get_by_id(user_id)
+    async def delete_user(self, user_id: int, email) -> bool:
+        user_db = self.user_repo.get_user_by_email(email=email)
         if not user_db:
             raise NotFoundException(f"User with id {user_id} not found")
+        if user_db.id != user_id:
+            raise BusinessException("Don't have such permission")
         return await self.user_repo.delete(user_id)
 
     async def authenticate_user(self, email: str, password: str) -> Optional[UserModel]:
