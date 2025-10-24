@@ -15,7 +15,9 @@ class Settings(BaseSettings):
     RABBITMQ_DEFAULT_USER: str
     RABBITMQ_DEFAULT_PASS: str
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
 
 
 @lru_cache()

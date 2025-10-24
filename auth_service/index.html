@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Authentication Service — Vue 3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  <div id="app" class="min-h-screen flex flex-col">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-slate-200">
+      <div class="max-w-6xl mx-auto px-6 py-4">
+        <div class="flex items-center justify-between">
+          <h1 class="text-xl font-bold text-slate-800">Auth Service</h1>
+          <div class="flex items-center gap-4">
+            <div v-if="user" class="flex items-center gap-3">
+              <span class="text-sm text-slate-600">{{ user.email }}</span>
+              <button @click="logout" class="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-sm transition-colors">
+                Выйти
+              </button>
+            </div>
+            <div v-else class="flex items-center gap-2">
+              <button @click="currentTab = 'login'" class="px-3 py-1 rounded bg-slate-100 hover:bg-slate-200 text-sm transition-colors">
+                Войти
+              </button>
+              <button @click="currentTab = 'register'" class="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm transition-colors">
+                Регистрация
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 py-8">
+      <div class="max-w-md mx-auto px-6">
+        <!-- Base URL Configuration -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+          <h2 class="text-lg font-semibold mb-3">Настройки API</h2>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Base URL:</label>
+              <input 
+                v-model.trim="baseUrl" 
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                placeholder="http://localhost:8000"
+              />
+            </div>
+            <button 
+              @click="saveBaseUrl" 
+              class="w-full px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-medium transition-colors"
+            >
+              Сохранить настройки
+            </button>
+          </div>
+        </div>
+
+        <!-- Auth Forms -->
+        <div v-if="!user" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <!-- Tabs -->
+          <div class="flex border-b border-slate-200 mb-6">
+            <button 
+              @click="currentTab = 'login'" 
+              :class="[
+                'flex-1 py-3 font-medium text-sm transition-colors',
+                currentTab === 'login' 
+                  ? 'text-blue-600 border-b-2 border-blue-600' 
+                  : 'text-slate-500 hover:text-slate-700'
+              ]"
+            >
+              Вход
+            </button>
+            <button 
+              @click="currentTab = 'register'" 
+              :class="[
+                'flex-1 py-3 font-medium text-sm transition-colors',
+                currentTab === 'register' 
+                  ? 'text-blue-600 border-b-2 border-blue-600' 
+                  : 'text-slate-500 hover:text-slate-700'
+              ]"
+            >
+              Регистрация
+            </button>
+          </div>
+
+          <!-- Login Form -->
+          <form v-if="currentTab === 'login'" @submit.prevent="login" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Email:</label>
+              <input 
+                v-model.trim="loginForm.email"
+                type="email" 
+                required
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                placeholder="your@email.com"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Пароль:</label>
+              <input 
+                v-model.trim="loginForm.password"
+                type="password" 
+                required
+                minlength="8"
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                placeholder="Минимум 8 символов"
+              />
+            </div>
+            <button 
+              type="submit" 
+              :disabled="loading.login"
+              class="w-full px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-medium transition-colors"
+            >
+              <span v-if="loading.login">Вход...</span>
+              <span v-else>Войти</span>
+            </button>
+          </form>
+
+          <!-- Register Form -->
+          <form v-if="currentTab === 'register'" @submit.prevent="register" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Email:</label>
+              <input 
+                v-model.trim="registerForm.email"
+                type="email" 
+                required
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                placeholder="your@email.com"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Пароль:</label>
+              <input 
+                v-model.trim="registerForm.password"
+                type="password" 
+                required
+                minlength="8"
+                class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors"
+                placeholder="Минимум 8 символов"
+              />
+            </div>
+            <button 
+              type="submit" 
+              :disabled="loading.register"
+              class="w-full px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white font-medium transition-colors"
+            >
+              <span v-if="loading.register">Регистрация...</span>
+              <span v-else>Зарегистрироваться</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- User Profile -->
+        <div v-else class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h2 class="text-xl font-semibold mb-6">Профиль пользователя</h2>
+          
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-500">ID:</label>
+                <p class="text-lg font-mono">{{ user.id }}</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-500">Email:</label>
+                <p class="text-lg">{{ user.email }}</p>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-500">Статус:</label>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Активный
+              </span>
+            </div>
+
+            <!-- Tokens Info -->
+            <div class="border-t border-slate-200 pt-4 mt-4">
+              <h3 class="text-lg font-medium mb-3">Токены</h3>
+              
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-sm font-medium text-slate-500 mb-1">Access Token:</label>
+                  <div class="flex gap-2">
+                    <input 
+                      :value="tokens.access_token" 
+                      readonly 
+                      class="flex-1 px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-sm font-mono truncate"
+                    />
+                    <button 
+                      @click="copyToken(tokens.access_token)" 
+                      class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors text-sm"
+                    >
+                      Копировать
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-slate-500 mb-1">Refresh Token:</label>
+                  <div class="flex gap-2">
+                    <input 
+                      :value="tokens.refresh_token" 
+                      readonly 
+                      class="flex-1 px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-sm font-mono truncate"
+                    />
+                    <button 
+                      @click="copyToken(tokens.refresh_token)" 
+                      class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors text-sm"
+                    >
+                      Копировать
+                    </button>
+                  </div>
+                </div>
+
+                <button 
+                  @click="refreshTokens" 
+                  :disabled="loading.refresh"
+                  class="w-full px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:bg-slate-400 text-white font-medium transition-colors"
+                >
+                  <span v-if="loading.refresh">Обновление...</span>
+                  <span v-else>Обновить токены</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Get User Info -->
+            <div class="border-t border-slate-200 pt-4 mt-4">
+              <h3 class="text-lg font-medium mb-3">Информация о пользователе</h3>
+              <button 
+                @click="getUserInfo" 
+                :disabled="loading.userInfo"
+                class="w-full px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 text-white font-medium transition-colors"
+              >
+                <span v-if="loading.userInfo">Загрузка...</span>
+                <span v-else>Получить информацию</span>
+              </button>
+              <div v-if="userInfo" class="mt-3 p-3 bg-slate-50 rounded-lg">
+                <pre class="text-sm whitespace-pre-wrap">{{ JSON.stringify(userInfo, null, 2) }}</pre>
+              </div>
+            </div>
+
+            <!-- Delete Account -->
+            <div class="border-t border-slate-200 pt-4 mt-4">
+              <h3 class="text-lg font-medium mb-3 text-rose-700">Опасная зона</h3>
+              <button 
+                @click="deleteAccount" 
+                class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-medium transition-colors"
+              >
+                Удалить аккаунт
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div v-if="message.text" :class="message.class" class="mt-4 p-4 rounded-lg text-sm">
+          {{ message.text }}
+        </div>
+      </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-4">
+      <div class="max-w-6xl mx-auto px-6 text-center">
+        <p class="text-sm text-slate-500">Authentication Service Demo</p>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const { createApp, reactive } = Vue;
+
+    createApp({
+      setup() {
+        const state = reactive({
+          baseUrl: localStorage.getItem('auth_base_url') || 'https://auth-service-v2-rqoi.onrender.com',
+          currentTab: 'login',
+          user: JSON.parse(localStorage.getItem('auth_user') || 'null'),
+          tokens: JSON.parse(localStorage.getItem('auth_tokens') || '{"access_token": "", "refresh_token": ""}'),
+          userInfo: null,
+          loading: {
+            login: false,
+            register: false,
+            refresh: false,
+            userInfo: false
+          },
+          loginForm: {
+            email: '',
+            password: ''
+          },
+          registerForm: {
+            email: '',
+            password: ''
+          },
+          message: {
+            text: '',
+            class: 'bg-slate-100 text-slate-700'
+          }
+        });
+
+        function setMessage(text, isSuccess = true) {
+          state.message.text = text;
+          state.message.class = isSuccess 
+            ? 'bg-green-100 text-green-700 border border-green-200' 
+            : 'bg-rose-100 text-rose-700 border border-rose-200';
+          
+          if (text) {
+            setTimeout(() => {
+              state.message.text = '';
+            }, 5000);
+          }
+        }
+
+        function buildUrl(path) {
+          return state.baseUrl.replace(/\/$/, '') + path;
+        }
+
+        async function apiCall(path, options = {}) {
+          const url = buildUrl(path);
+          
+          // Для OAuth2 формы нужно использовать FormData
+          const useFormData = options.useFormData || false;
+          
+          const config = {
+            method: options.method || 'GET',
+            headers: {
+              'Accept': 'application/json',
+              ...(useFormData ? {} : { 'Content-Type': 'application/json' }),
+              ...options.headers
+            },
+            body: useFormData ? options.body : (options.body ? JSON.stringify(options.body) : undefined)
+          };
+
+          // Add Authorization header if user is logged in
+          if (state.tokens.access_token && !options.skipAuth) {
+            config.headers['Authorization'] = `Bearer ${state.tokens.access_token}`;
+          }
+
+          try {
+            const response = await fetch(url, config);
+            
+            if (!response.ok) {
+              let errorText = await response.text();
+              try {
+                const errorJson = JSON.parse(errorText);
+                errorText = errorJson.detail || JSON.stringify(errorJson);
+              } catch {
+                // Keep original error text if not JSON
+              }
+              throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
+            return response.status === 204 ? null : await response.json();
+          } catch (error) {
+            throw error;
+          }
+        }
+
+        async function login() {
+          try {
+            state.loading.login = true;
+            
+            // Для OAuth2PasswordRequestForm используем FormData
+            const formData = new FormData();
+            formData.append('username', state.loginForm.email);
+            formData.append('password', state.loginForm.password);
+            
+            const data = await apiCall('/users/token', {
+              method: 'POST',
+              useFormData: true,
+              body: formData,
+              skipAuth: true
+            });
+
+            // Сохраняем пользователя (email из токена)
+            state.user = { 
+              id: data.id || 0, // ID может приходить из другого endpoint'а
+              email: state.loginForm.email 
+            };
+            
+            // Сохраняем токены
+            state.tokens = {
+              access_token: data.access_token,
+              refresh_token: data.refresh_token
+            };
+
+            // Save to localStorage
+            localStorage.setItem('auth_user', JSON.stringify(state.user));
+            localStorage.setItem('auth_tokens', JSON.stringify(state.tokens));
+
+            setMessage('Успешный вход!');
+            state.loginForm.email = '';
+            state.loginForm.password = '';
+            
+            // Получаем полную информацию о пользователе
+            await getUserInfo();
+            
+          } catch (error) {
+            setMessage(error.message, false);
+          } finally {
+            state.loading.login = false;
+          }
+        }
+
+        async function register() {
+          try {
+            state.loading.register = true;
+            
+            const data = await apiCall('/users/register', {
+              method: 'POST',
+              body: {
+                email: state.registerForm.email,
+                password: state.registerForm.password
+              },
+              skipAuth: true
+            });
+
+            setMessage('Регистрация успешна! Теперь вы можете войти.');
+            state.registerForm.email = '';
+            state.registerForm.password = '';
+            state.currentTab = 'login';
+            
+          } catch (error) {
+            setMessage(error.message, false);
+          } finally {
+            state.loading.register = false;
+          }
+        }
+
+        async function refreshTokens() {
+          try {
+            state.loading.refresh = true;
+            
+            const data = await apiCall('/users/refresh_token', {
+              method: 'POST',
+              body: {
+                refresh_token: state.tokens.refresh_token
+              },
+              skipAuth: true
+            });
+
+            state.tokens = {
+              access_token: data.access_token,
+              refresh_token: data.refresh_token.token
+            };
+            localStorage.setItem('auth_tokens', JSON.stringify(state.tokens));
+            
+            setMessage('Токены обновлены!');
+          } catch (error) {
+            setMessage(error.message, false);
+          } finally {
+            state.loading.refresh = false;
+          }
+        }
+
+        async function getUserInfo() {
+          try {
+            state.loading.userInfo = true;
+            
+            // Используем endpoint для получения информации о текущем пользователе
+            const data = await apiCall('/users/me');
+            
+            state.userInfo = data;
+            
+            // Обновляем информацию о пользователе
+            if (data && data.id) {
+              state.user.id = data.id;
+              state.user.email = data.email;
+              localStorage.setItem('auth_user', JSON.stringify(state.user));
+            }
+            
+          } catch (error) {
+            setMessage('Не удалось получить информацию о пользователе: ' + error.message, false);
+          } finally {
+            state.loading.userInfo = false;
+          }
+        }
+
+        async function deleteAccount() {
+          if (!confirm('Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя отменить.')) {
+            return;
+          }
+
+          try {
+            await apiCall(`/users/${state.user.id}`, {
+              method: 'DELETE'
+            });
+
+            logout();
+            setMessage('Аккаунт успешно удален');
+          } catch (error) {
+            setMessage(error.message, false);
+          }
+        }
+
+        function logout() {
+          state.user = null;
+          state.tokens = { access_token: '', refresh_token: '' };
+          state.userInfo = null;
+          localStorage.removeItem('auth_user');
+          localStorage.removeItem('auth_tokens');
+          setMessage('Вы вышли из системы');
+        }
+
+        async function copyToken(token) {
+          if (!token) return;
+          
+          try {
+            await navigator.clipboard.writeText(token);
+            setMessage('Токен скопирован в буфер обмена');
+          } catch (error) {
+            setMessage('Не удалось скопировать токен', false);
+          }
+        }
+
+        function saveBaseUrl() {
+          localStorage.setItem('auth_base_url', state.baseUrl);
+          setMessage('Настройки сохранены');
+        }
+
+        // При загрузке страницы, если есть токен, получаем информацию о пользователе
+        if (state.tokens.access_token) {
+          getUserInfo();
+        }
+
+        return {
+          ...Vue.toRefs(state),
+          login,
+          register,
+          refreshTokens,
+          getUserInfo,
+          deleteAccount,
+          logout,
+          copyToken,
+          saveBaseUrl,
+          setMessage
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
