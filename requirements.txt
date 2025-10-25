@@ -9,6 +9,7 @@ astroid==4.0.1
 asyncpg==0.30.0
 bcrypt==4.0.1
 black==25.9.0
+certifi==2025.10.5
 cffi==2.0.0
 cfgv==3.4.0
 click==8.3.0
@@ -22,7 +23,9 @@ fastapi==0.119.0
 filelock==3.20.0
 greenlet==3.2.4
 h11==0.16.0
+httpcore==1.0.9
 httptools==0.7.1
+httpx==0.28.1
 identify==2.6.15
 idna==3.11
 isort==7.0.0

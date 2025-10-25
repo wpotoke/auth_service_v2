@@ -13,13 +13,31 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  
+  api_gateway_service:
+    build:
+      context: .
+      dockerfile: api_gateway_service/app/Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - .env
+    environment:
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - TASK_SERVICE_URL=${TASK_SERVICE_URL}
+    depends_on:
+      auth_service:
+        condition: service_started
+      task_service:
+        condition: service_started
+    restart: on-failure
 
   auth_service:
     build:
       context: .
       dockerfile: auth_service/app/Dockerfile
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8001:8000"
     env_file:
       - .env
     environment:
@@ -40,7 +58,7 @@ services:
       context: .
       dockerfile: task_service/app/Dockerfile
     ports:
-      - "127.0.0.1:8001:8000"
+      - "127.0.0.1:8002:8000"
     env_file:
       - .env
     environment:
