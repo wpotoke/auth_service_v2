@@ -13,6 +13,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  redis:
+    image: redis:latest
+    container_name: redis-task
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
   
   api_gateway_service:
     build:
@@ -52,6 +60,8 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_started
 
   task_service:
     build:
@@ -62,12 +72,16 @@ services:
     env_file:
       - .env
     environment:
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_HOST=${REDIS_HOST}
       - POSTGRES_TASK_DB_URL=${POSTGRES_TASK_DB_URL}
       - RABBITMQ_URL=${RABBITMQ_URL}
     volumes:
       - task_data:/app/data
     depends_on:
       auth_service:
+        condition: service_started
+      redis:
         condition: service_started
       rabbitmq:
         condition: service_healthy
@@ -103,3 +117,4 @@ volumes:
   auth_data:
   task_postgres_data:
   auth_postgres_data:
+  redis_data:
