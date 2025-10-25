@@ -48,4 +48,4 @@ def get_task_service(task_repo: TaskRepository = Depends(get_task_repository)):
 async def get_redis_client() -> redis.Redis:
     if not redis_client.client:
         await redis_client.connect()
-    return redis_client
+    return redis_client.client
