@@ -1,5 +1,10 @@
+import os
 from typing import Optional
 import redis.asyncio as redis
+
+
+REDIS_PORT = os.getenv("REDIS_PORT")
+REDIS_HOST = os.getenv("REDIS_HOST")
 
 
 class RedisClient:
@@ -8,7 +13,7 @@ class RedisClient:
 
     async def connect(self):
         self.client = redis.Redis(
-            host="127.0.0.1", port=6379, db=0, decode_responses=True
+            host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True
         )
         try:
             await self.client.ping()
