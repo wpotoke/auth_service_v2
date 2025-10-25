@@ -9,6 +9,7 @@ from task_service.app.core.rabbitmq import (
 )
 from task_service.app.repositories.tasks import TaskRepository
 from task_service.app.services.tasks import TaskService
+from task_service.app.core.redis_client import redis_client, redis
 
 security = HTTPBearer()
 
@@ -42,3 +43,9 @@ async def get_current_user(
 
 def get_task_service(task_repo: TaskRepository = Depends(get_task_repository)):
     return TaskService(task_repository=task_repo)
+
+
+async def get_redis_client() -> redis.Redis:
+    if not redis_client.client:
+        await redis_client.connect()
+    return redis_client

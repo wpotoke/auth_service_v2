@@ -1,15 +1,18 @@
-# pylint:disable=unused-argument,redefined-outer-name
+# pylint:disable=unused-argument,redefined-outer-name,global-statement
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from task_service.app.core.rabbitmq import user_validator_instance
+from task_service.app.core.redis_client import redis_client
 from task_service.app.api.routers.tasks import router as task_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await redis_client.connect()
     await user_validator_instance.connect()
     yield
+    await redis_client.close()
     await user_validator_instance.close()
 
 
