@@ -1,19 +1,21 @@
 # pylint:disable=bad-exception-cause,catching-non-exception,unused-argument
 # ruff:noqa:E712
 from typing import Annotated
-from fastapi import APIRouter, Depends, status, Path, Request
+
+from fastapi import APIRouter, Depends, Path, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import Field
-from auth_service.app.schemas.users import UserCreate, User
+
 from auth_service.app.auth.dependencies import get_user_service
-from auth_service.app.services.users import UserService
 from auth_service.app.auth.security import (
     create_access_token,
     create_refresh_token,
     get_email_current_user,
 )
-from auth_service.app.schemas.tokens import TokenGroup, RefreshTokenRequest
 from auth_service.app.core.limiter import limiter
+from auth_service.app.schemas.tokens import RefreshTokenRequest, TokenGroup
+from auth_service.app.schemas.users import User, UserCreate
+from auth_service.app.services.users import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -55,9 +57,7 @@ async def update_access_token(
     request: RefreshTokenRequest,
     user_service: Annotated[UserService, Depends(get_user_service)],
 ):
-    token_group = await user_service.refresh_access_token(
-        refresh_token=request.refresh_token
-    )
+    token_group = await user_service.refresh_access_token(refresh_token=request.refresh_token)
     return token_group
 
 

@@ -1,10 +1,10 @@
 import asyncio
 import uuid
-from typing import Optional
+
 import aio_pika
 from aio_pika.abc import AbstractIncomingMessage
-from task_service.app.core.config import settings
 
+from task_service.app.core.config import settings
 
 RABBITMQ_URL = settings.RABBITMQ_URL
 
@@ -14,9 +14,9 @@ class RpcClient:
 
     def __init__(self, amqp_url: str = RABBITMQ_URL):
         self.amqp_url: str = amqp_url
-        self.connection: Optional[aio_pika.RobustConnection] = None
-        self.channel: Optional[aio_pika.Channel] = None
-        self.callback_queue: Optional[aio_pika.Queue] = None
+        self.connection: aio_pika.RobustConnection | None = None
+        self.channel: aio_pika.Channel | None = None
+        self.callback_queue: aio_pika.Queue | None = None
         self.futures = {}
         self.loop = asyncio.get_running_loop()
 
@@ -52,7 +52,7 @@ class RpcClient:
         )
         try:
             return await asyncio.wait_for(future, timeout=5.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self.futures.pop(correlation_id, None)
             return None
 

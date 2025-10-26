@@ -1,16 +1,16 @@
 import datetime
-from typing import Optional, Annotated
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
 from task_service.app.models.task import TaskStatus
 
 
 class TaskCreate(BaseModel):
-    name: Annotated[
-        str, Field(min_length=3, max_length=50, description="Название задачи")
-    ]
+    name: Annotated[str, Field(min_length=3, max_length=50, description="Название задачи")]
     status: TaskStatus
     description: Annotated[
-        Optional[str],
+        str | None,
         Field(default=None, max_length=20000, description="Описание задачи"),
     ]
     user_id: Annotated[int, Field(...)]

@@ -1,10 +1,11 @@
-from datetime import datetime, timedelta, timezone
-from fastapi import HTTPException, status, Depends
+from datetime import UTC, datetime, timedelta
+
+import jwt
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
-import jwt
-from auth_service.app.core.config import settings
 
+from auth_service.app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/token")
@@ -29,9 +30,7 @@ def create_access_token(data: dict):
     Создаёт JWT.
     """
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(
-        minutes=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
+    expire = datetime.now(UTC) + timedelta(minutes=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
@@ -41,9 +40,7 @@ def create_refresh_token(data: dict):
     Создаёт рефреш-токен с длительным сроком действия.
     """
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(
-        days=int(settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    )
+    expire = datetime.now(UTC) + timedelta(days=int(settings.REFRESH_TOKEN_EXPIRE_DAYS))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
@@ -57,9 +54,7 @@ async def get_email_refresh_access_token(refresh_token: str):
     )
 
     try:
-        payload = jwt.decode(
-            refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
+        payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email = payload.get("sub")
         if email is None:
             raise credentials_exception
@@ -79,9 +74,7 @@ async def get_email_current_user(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-        )
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             raise credential_exception

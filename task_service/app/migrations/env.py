@@ -1,20 +1,20 @@
-import sys
 import os
+import sys
 
-project_root = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+project_root = os.path.join(os.path.dirname(__file__), "..", "..", "..")
 sys.path.insert(0, project_root)
 
 import asyncio
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from alembic import context
-import task_service.app.models
 from task_service.app.core.config import settings
 from task_service.app.core.database import Base
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -99,6 +99,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-
-
-

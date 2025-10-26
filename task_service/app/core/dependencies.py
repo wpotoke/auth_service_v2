@@ -1,15 +1,17 @@
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from task_service.app.core.database import async_session_maker
 from task_service.app.core.rabbitmq import (
     RabbitMQTokenValidator,
     user_validator_instance,
 )
+from task_service.app.core.redis_client import redis, redis_client
 from task_service.app.repositories.tasks import TaskRepository
 from task_service.app.services.tasks import TaskService
-from task_service.app.core.redis_client import redis_client, redis
 
 security = HTTPBearer()
 

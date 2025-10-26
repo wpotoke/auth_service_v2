@@ -1,12 +1,11 @@
 from typing import Annotated
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserCreate(BaseModel):
     email: Annotated[EmailStr, Field(description="Email пользователя")]
-    password: Annotated[
-        str, Field(min_length=8, description="Пароль (минимум 8 символов)")
-    ]
+    password: Annotated[str, Field(min_length=8, description="Пароль (минимум 8 символов)")]
 
 
 class User(BaseModel):

@@ -1,9 +1,11 @@
-from typing import Optional
 import json
+
 import redis.asyncio as redis
-from task_service.app.repositories.tasks import TaskRepository
+
 from task_service.app.models.task import Task as TaskModel
-from task_service.app.schemas.tasks import TaskCreate, Task as TaskSchema
+from task_service.app.repositories.tasks import TaskRepository
+from task_service.app.schemas.tasks import Task as TaskSchema
+from task_service.app.schemas.tasks import TaskCreate
 
 
 class TaskService:
@@ -15,15 +17,13 @@ class TaskService:
 
     async def get_task_by_id(
         self, task_id: int, user_id: int, r: redis.Redis
-    ) -> Optional[TaskModel | TaskSchema]:
+    ) -> TaskModel | TaskSchema | None:
         cache_key = f"task:{task_id}-user:{user_id}"
         cached = await r.get(cache_key)
         if cached:
             data = json.loads(cached)
             return TaskSchema.model_validate_json(data)
-        task_model = await self.task_repository.get_by_id(
-            task_id=task_id, user_id=user_id
-        )
+        task_model = await self.task_repository.get_by_id(task_id=task_id, user_id=user_id)
         if not task_model:
             raise ValueError("...")
         task_schema = TaskSchema.model_validate(task_model)
@@ -31,9 +31,7 @@ class TaskService:
         await r.setex(name=cache_key, value=task_json, time=60)
         return task_model
 
-    async def create_task(
-        self, task_create: TaskCreate, user_id: int, r: redis.Redis
-    ) -> Optional[TaskModel]:
+    async def create_task(self, task_create: TaskCreate, user_id: int, r: redis.Redis) -> TaskModel | None:
         if task_create.user_id != user_id:
             raise ValueError(f"{user_id} not qe {user_id}")
         task = await self.task_repository.create(task_create=task_create)
@@ -43,12 +41,8 @@ class TaskService:
         await r.delete(cache_key)
         return task
 
-    async def task_update(
-        self, task_id: int, task_update: TaskCreate, user_id: int
-    ) -> Optional[TaskModel]:
-        return await self.task_repository.update(
-            task_id=task_id, task_update=task_update, user_id=user_id
-        )
+    async def task_update(self, task_id: int, task_update: TaskCreate, user_id: int) -> TaskModel | None:
+        return await self.task_repository.update(task_id=task_id, task_update=task_update, user_id=user_id)
 
     async def task_delete(self, task_id: int, user_id) -> bool:
         return await self.task_repository.delete(task_id=task_id, user_id=user_id)

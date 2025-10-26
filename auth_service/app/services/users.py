@@ -1,35 +1,34 @@
 # ruff: noqa: E712
-from datetime import datetime, timedelta, timezone
-from typing import Optional
-from auth_service.app.models.users import User as UserModel
-from auth_service.app.schemas.users import UserCreate
-from auth_service.app.repositories.users import UserRepository
+from datetime import UTC, datetime, timedelta
+
 from auth_service.app.auth.security import (
     create_access_token,
-    get_email_refresh_access_token,
     create_refresh_token,
+    get_email_refresh_access_token,
 )
-from auth_service.app.core.exceptions import (
-    NotFoundException,
-    ConflictException,
-    BusinessException,
-)
-from auth_service.app.schemas.tokens import TokenGroup, RefreshTokenBase
 from auth_service.app.core.config import settings
+from auth_service.app.core.exceptions import (
+    BusinessException,
+    ConflictException,
+    NotFoundException,
+)
+from auth_service.app.models.users import User as UserModel
+from auth_service.app.repositories.users import UserRepository
+from auth_service.app.schemas.tokens import RefreshTokenBase, TokenGroup
+from auth_service.app.schemas.users import UserCreate
 
 
 class UserService:
-
     def __init__(self, user_repo: UserRepository):
         self.user_repo = user_repo
 
-    async def get_user(self, user_id: int) -> Optional[UserModel]:
+    async def get_user(self, user_id: int) -> UserModel | None:
         user_db = await self.user_repo.get_by_id(user_id)
         if not user_db:
             raise NotFoundException(f"User with id {user_id} not found")
         return user_db
 
-    async def get_user_by_email(self, email: str) -> Optional[UserModel]:
+    async def get_user_by_email(self, email: str) -> UserModel | None:
         user_db = await self.user_repo.get_user_by_email(email)
         if not user_db:
             raise NotFoundException("User with this email not found")
@@ -50,7 +49,7 @@ class UserService:
             raise BusinessException("Don't have such permission")
         return await self.user_repo.delete(user_id)
 
-    async def authenticate_user(self, email: str, password: str) -> Optional[UserModel]:
+    async def authenticate_user(self, email: str, password: str) -> UserModel | None:
         authed_user = await self.user_repo.authenticate(email, password)
         if not authed_user:
             raise BusinessException("email or password wrong")
@@ -62,15 +61,12 @@ class UserService:
         if not user:
             raise NotFoundException("User with this email not found")
         access_token = create_access_token(data={"sub": user.email, "id": user.id})
-        new_refresh_token = create_refresh_token(
-            data={"sub": user.email, "id": user.id}
-        )
+        new_refresh_token = create_refresh_token(data={"sub": user.email, "id": user.id})
 
         refresh_token_schema = RefreshTokenBase(
             token=new_refresh_token,
             user_id=user.id,
-            expires_at=datetime.now(timezone.utc)
-            + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+            expires_at=datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         )
 
         return TokenGroup(access_token=access_token, refresh_token=refresh_token_schema)

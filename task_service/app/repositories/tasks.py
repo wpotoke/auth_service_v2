@@ -1,25 +1,22 @@
-from typing import Optional
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from task_service.app.models.task import Task as TaskModel
 from task_service.app.schemas.tasks import TaskCreate
 
 
 class TaskRepository:
-
     def __init__(self, db: AsyncSession):
         self.db = db
 
     async def get_all(self, user_id) -> list[TaskModel]:
         result = await self.db.scalars(
-            select(TaskModel).where(
-                TaskModel.is_active == True, TaskModel.user_id == user_id
-            )
+            select(TaskModel).where(TaskModel.is_active == True, TaskModel.user_id == user_id)
         )
         tasks = result.all()
         return tasks
 
-    async def get_by_id(self, task_id: int, user_id) -> Optional[TaskModel]:
+    async def get_by_id(self, task_id: int, user_id) -> TaskModel | None:
         result = await self.db.scalars(
             select(TaskModel).where(
                 TaskModel.id == task_id,
@@ -31,7 +28,6 @@ class TaskRepository:
         return task
 
     async def create(self, task_create: TaskCreate):
-
         task = TaskModel(**task_create.model_dump())
         self.db.add(task)
         await self.db.commit()

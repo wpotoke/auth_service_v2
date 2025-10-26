@@ -1,38 +1,33 @@
 # ruff: noqa: E712
-from typing import Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
 
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from auth_service.app.auth.security import hash_password, verify_password
 from auth_service.app.models.users import User as UserModel
 from auth_service.app.schemas.users import UserCreate
-from auth_service.app.auth.security import verify_password, hash_password
 
 
 class UserRepository:
-
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_by_id(self, user_id: int) -> Optional[UserModel]:
+    async def get_by_id(self, user_id: int) -> UserModel | None:
         """
         Получает пользователя по id
         """
         result = await self.db.scalars(
-            select(UserModel).where(
-                UserModel.id == user_id, UserModel.is_active == True
-            )
+            select(UserModel).where(UserModel.id == user_id, UserModel.is_active == True)
         )
         user = result.first()
         return user
 
-    async def get_user_by_email(self, email: str) -> Optional[UserModel]:
+    async def get_user_by_email(self, email: str) -> UserModel | None:
         """
         Получает пользователя по email
         """
         result = await self.db.scalars(
-            select(UserModel).where(
-                UserModel.email == email, UserModel.is_active == True
-            )
+            select(UserModel).where(UserModel.email == email, UserModel.is_active == True)
         )
         user = result.first()
         return user

@@ -1,7 +1,6 @@
 import os
-from typing import Optional
-import redis.asyncio as redis
 
+import redis.asyncio as redis
 
 REDIS_PORT = os.getenv("REDIS_PORT")
 REDIS_HOST = os.getenv("REDIS_HOST")
@@ -9,12 +8,10 @@ REDIS_HOST = os.getenv("REDIS_HOST")
 
 class RedisClient:
     def __init__(self):
-        self.client: Optional[redis.Redis] = None
+        self.client: redis.Redis | None = None
 
     async def connect(self):
-        self.client = redis.Redis(
-            host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True
-        )
+        self.client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
         try:
             await self.client.ping()
             print("Успешное подключение")

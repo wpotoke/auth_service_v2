@@ -1,6 +1,7 @@
 # pylint:disable=:redefined-outer-name
 import os
 from contextlib import asynccontextmanager
+
 import httpx
 from fastapi import FastAPI, Request, Response
 
@@ -21,9 +22,7 @@ AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
 TASK_SERVICE_URL = os.getenv("TASK_SERVICE_URL")
 
 
-@app.api_route(
-    "/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
-)
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 async def proxy_request(request: Request, path: str):
     """Эта функция определяет, какому сервису перенаправить запрос,
     основываясь на начальной части URL-пути."""
