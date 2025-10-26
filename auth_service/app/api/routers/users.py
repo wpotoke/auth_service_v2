@@ -1,7 +1,7 @@
-# pylint:disable=bad-exception-cause,catching-non-exception
+# pylint:disable=bad-exception-cause,catching-non-exception,unused-argument
 # ruff:noqa:E712
 from typing import Annotated
-from fastapi import APIRouter, Depends, status, Path
+from fastapi import APIRouter, Depends, status, Path, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import Field
 from auth_service.app.schemas.users import UserCreate, User
@@ -13,13 +13,15 @@ from auth_service.app.auth.security import (
     get_email_current_user,
 )
 from auth_service.app.schemas.tokens import TokenGroup, RefreshTokenRequest
-
+from auth_service.app.core.limiter import limiter
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/hour")
 async def register_user(
+    request: Request,
     user: Annotated[UserCreate, Field(description="User create data")],
     user_service: Annotated[UserService, Depends(get_user_service)],
 ):
@@ -27,7 +29,9 @@ async def register_user(
 
 
 @router.post("/token", status_code=status.HTTP_200_OK)
+@limiter.limit("10/hour")
 async def login(
+    request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     user_service: Annotated[UserService, Depends(get_user_service)],
 ):
@@ -58,7 +62,9 @@ async def update_access_token(
 
 
 @router.get("/me", response_model=User, status_code=status.HTTP_200_OK)
+@limiter.limit("5/minute")
 async def get_me(
+    request: Request,
     user_service: Annotated[UserService, Depends(get_user_service)],
     user_email: Annotated[str, Depends(get_email_current_user)],
 ):

@@ -1,6 +1,7 @@
+# pylint:disable=unused-argument
 from typing import Annotated, Optional
 import redis.asyncio as redis
-from fastapi import APIRouter, Depends, Path, status
+from fastapi import APIRouter, Depends, Path, status, Request
 from task_service.app.core.dependencies import (
     get_task_service,
     get_current_user,
@@ -8,12 +9,16 @@ from task_service.app.core.dependencies import (
 )
 from task_service.app.services.tasks import TaskService
 from task_service.app.schemas.tasks import Task, TaskCreate
+from task_service.app.core.limiter import limiter
+
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
 @router.get("", response_model=list[Task], status_code=status.HTTP_200_OK)
+@limiter.limit("15/min")
 async def get_tasks(
+    request: Request,
     task_service: Annotated[TaskService, Depends(get_task_service)],
     user_id: Annotated[int, Depends(get_current_user)],
 ) -> list[Task]:
@@ -21,7 +26,9 @@ async def get_tasks(
 
 
 @router.get("/{task_id}", response_model=Task, status_code=status.HTTP_200_OK)
+@limiter.limit("15/min")
 async def get_task(
+    request: Request,
     task_id: Annotated[int, Path(ge=1)],
     task_service: Annotated[TaskService, Depends(get_task_service)],
     user_id: Annotated[int, Depends(get_current_user)],
@@ -33,7 +40,9 @@ async def get_task(
 
 
 @router.post("", response_model=Task, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/min")
 async def create_task(
+    request: Request,
     task_service: Annotated[TaskService, Depends(get_task_service)],
     user_id: Annotated[int, Depends(get_current_user)],
     task_create: TaskCreate,
@@ -45,7 +54,9 @@ async def create_task(
 
 
 @router.put("/{task_id}", response_model=Task, status_code=status.HTTP_200_OK)
+@limiter.limit("5/min")
 async def update_task(
+    request: Request,
     task_id: Annotated[int, Path(ge=1)],
     task_service: Annotated[TaskService, Depends(get_task_service)],
     user_id: Annotated[int, Depends(get_current_user)],

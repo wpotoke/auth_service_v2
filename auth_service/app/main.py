@@ -1,9 +1,12 @@
 # pylint:disable=unused-argument,redefined-outer-name
 import asyncio
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from auth_service.app.core.limiter import limiter
 from auth_service.app.api.routers.users import router as user_router
 from auth_service.app.core.rabbitmq_worker import run_consumer
 
@@ -25,6 +28,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,10 +39,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 app.include_router(user_router)
 
 
 @app.get("/")
-async def read_index():
+@limiter.limit("10/minute")
+async def read_index(request: Request):
     # Возвращаем главную HTML страницу
     return FileResponse("index.html")
