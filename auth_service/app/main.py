@@ -1,13 +1,15 @@
-# pylint:disable=unused-argument,redefined-outer-name
+# pylint:disable=unused-argument,redefined-outer-name,duplicate-code
 import asyncio
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from auth_service.app.core.limiter import limiter
+
 from auth_service.app.api.routers.users import router as user_router
+from auth_service.app.core.limiter import limiter
 from auth_service.app.core.rabbitmq_worker import run_consumer
 
 
