@@ -2,34 +2,40 @@
 from typing import Annotated
 
 import redis.asyncio as redis
-from fastapi import APIRouter, Depends, Path, Request, status
+from fastapi import APIRouter, Depends, Path, status
+from fastapi_limiter.depends import RateLimiter
 
 from task_service.app.core.dependencies import (
     get_current_user,
     get_redis_client,
     get_task_service,
 )
-from task_service.app.core.limiter import limiter
 from task_service.app.schemas.tasks import Task, TaskCreate
 from task_service.app.services.tasks import TaskService
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
-@router.get("", response_model=list[Task], status_code=status.HTTP_200_OK)
-@limiter.limit("15/min")
+@router.get(
+    "",
+    response_model=list[Task],
+    dependencies=[Depends(RateLimiter(times=15, minutes=1))],
+    status_code=status.HTTP_200_OK,
+)
 async def get_tasks(
-    request: Request,
     task_service: Annotated[TaskService, Depends(get_task_service)],
     user_id: Annotated[int, Depends(get_current_user)],
 ) -> list[Task]:
     return await task_service.get_tasks(user_id=user_id)
 
 
-@router.get("/{task_id}", response_model=Task, status_code=status.HTTP_200_OK)
-@limiter.limit("15/min")
+@router.get(
+    "/{task_id}",
+    response_model=Task,
+    dependencies=[Depends(RateLimiter(times=10, minutes=1))],
+    status_code=status.HTTP_200_OK,
+)
 async def get_task(
-    request: Request,
     task_id: Annotated[int, Path(ge=1)],
     task_service: Annotated[TaskService, Depends(get_task_service)],
     user_id: Annotated[int, Depends(get_current_user)],
@@ -38,10 +44,13 @@ async def get_task(
     return await task_service.get_task_by_id(task_id=task_id, user_id=user_id, r=redis_client)
 
 
-@router.post("", response_model=Task, status_code=status.HTTP_201_CREATED)
-@limiter.limit("10/min")
+@router.post(
+    "",
+    response_model=Task,
+    dependencies=[Depends(RateLimiter(times=5, minutes=1))],
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_task(
-    request: Request,
     task_service: Annotated[TaskService, Depends(get_task_service)],
     user_id: Annotated[int, Depends(get_current_user)],
     task_create: TaskCreate,
@@ -50,10 +59,13 @@ async def create_task(
     return await task_service.create_task(task_create=task_create, user_id=user_id, r=redis_client)
 
 
-@router.put("/{task_id}", response_model=Task, status_code=status.HTTP_200_OK)
-@limiter.limit("5/min")
+@router.put(
+    "/{task_id}",
+    response_model=Task,
+    dependencies=[Depends(RateLimiter(times=5, minutes=1))],
+    status_code=status.HTTP_200_OK,
+)
 async def update_task(
-    request: Request,
     task_id: Annotated[int, Path(ge=1)],
     task_service: Annotated[TaskService, Depends(get_task_service)],
     user_id: Annotated[int, Depends(get_current_user)],

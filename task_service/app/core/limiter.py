@@ -1,4 +1,12 @@
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from fastapi_limiter import FastAPILimiter
 
-limiter = Limiter(key_func=get_remote_address)
+from .redis_client import redis_client
+
+
+async def init_limiter():
+    """
+    Инициализация FastAPI Limiter с существующим Redis клиентом
+    """
+    if not redis_client.client:
+        await redis_client.connect()
+    await FastAPILimiter.init(redis_client.client)
