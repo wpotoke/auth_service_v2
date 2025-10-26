@@ -1,4 +1,5 @@
 services:
+
   rabbitmq:
     image: rabbitmq:4.1.1-management-alpine
     ports:
@@ -13,6 +14,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
   redis:
     image: redis:latest
     container_name: redis-task
@@ -22,6 +24,13 @@ services:
       - redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
   
+  prometheus_auth:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./auth_service/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
   api_gateway_service:
     build:
       context: .

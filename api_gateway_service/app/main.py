@@ -1,4 +1,5 @@
 # pylint:disable=:redefined-outer-name
+# import time
 import os
 from contextlib import asynccontextmanager
 
@@ -16,6 +17,22 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+# @app.middleware("http")
+# async def log_request(request: Request, call_next):
+#     start_time = time.time()
+#     response = await call_next(request)
+#     process_time = time.time() - start_time
+#     formatted_process_time = f"{process_time:.2f}"
+
+#     logger.info(
+#         f"request_path={request.url.path} "
+#         f"method={request.method} "
+#         f"status_code={response.status_code} "
+#         f"process_time_ms={formatted_process_time}"
+#     )
+#     return response
 
 
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
