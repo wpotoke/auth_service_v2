@@ -4,7 +4,15 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "W", "Q"]
-ignore = []
+
+ignore = [
+    "B008",
+    "E712"
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/migrations/env.py" = ["E402"]
+
 
 [tool.ruff.format]
 quote-style = "double"

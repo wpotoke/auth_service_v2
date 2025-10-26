@@ -12,7 +12,7 @@ disable =
     singleton-comparison
 
 [FORMAT]
-max-line-length=100
+max-line-length=110
 
 [DESIGN]
 max-args=5
