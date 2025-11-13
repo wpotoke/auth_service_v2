@@ -1,5 +1,6 @@
 # pylint:disable=bad-exception-cause,catching-non-exception,unused-argument
 # ruff:noqa:E712
+from time import time
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, status
@@ -44,13 +45,19 @@ async def register_user(
     user: Annotated[UserCreate, Field(description="User create data")],
     user_service: Annotated[UserService, Depends(get_user_service)],
 ):
+    ACTIVE_CONNECTIONS.labels(app="auth_service").inc()
+    start_time = time()
     try:
         user = await user_service.create_user(user=user)
+        REQUEST_DURATION.labels(method="POST", endpoint="/users/register").observe(time() - start_time)
         REQUEST_TOTAL.labels(method="POST", endpoint="/users/register", status_code="201").inc()
         return user
     except ConflictException as e:
+        REQUEST_DURATION.labels(method="POST", endpoint="/users/register").observe(time() - start_time)
         REQUEST_TOTAL.labels(method="POST", endpoint="/users/register", status_code=str(e.status_code)).inc()
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    finally:
+        ACTIVE_CONNECTIONS.labels(app="auth_service").dec()
 
 
 @router.post("/token", status_code=status.HTTP_200_OK)
@@ -63,11 +70,14 @@ async def login(
     """
     Аутентифицирует пользователя и возвращает JWT с email, role и id.
     """
+    ACTIVE_CONNECTIONS.labels(app="auth_service").inc()
+    start_time = time()
     try:
         user = await user_service.authenticate_user(form_data.username, form_data.password)
 
         access_token = create_access_token(data={"sub": user.email, "id": user.id})
         refresh_token = create_refresh_token(data={"sub": user.email, "id": user.id})
+        REQUEST_DURATION.labels(method="POST", endpoint="/users/token").observe(time() - start_time)
         REQUEST_TOTAL.labels(method="POST", endpoint="/users/token", status_code="200").inc()
         return {
             "access_token": access_token,
@@ -75,8 +85,11 @@ async def login(
             "token_type": "bearer",
         }
     except NotFoundException as e:
+        REQUEST_DURATION.labels(method="POST", endpoint="/users/token").observe(time() - start_time)
         REQUEST_TOTAL.labels(method="POST", endpoint="/users/token", status_code=str(e.status_code)).inc()
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    finally:
+        ACTIVE_CONNECTIONS.labels(app="auth_service").dec()
 
 
 @router.post("/refresh_token", response_model=TokenGroup)
@@ -84,17 +97,23 @@ async def update_access_token(
     request: RefreshTokenRequest,
     user_service: Annotated[UserService, Depends(get_user_service)],
 ):
+    ACTIVE_CONNECTIONS.labels(app="auth_service").inc()
+    start_time = time()
     try:
         token_group = await user_service.refresh_access_token(refresh_token=request.refresh_token)
+        REQUEST_DURATION.labels(method="POST", endpoint="/users/refresh_token").observe(time() - start_time)
         REQUEST_TOTAL.labels(method="POST", endpoint="/users/refresh_token", status_code="200").inc()
         return token_group
     except NotFoundException as e:
+        REQUEST_DURATION.labels(method="POST", endpoint="/users/refresh_token").observe(time() - start_time)
         REQUEST_TOTAL.labels(
             method="POST",
             endpoint="/users/refresh_token",
             status_code=str(e.status_code),
         ).inc()
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    finally:
+        ACTIVE_CONNECTIONS.labels(app="auth_service").dec()
 
 
 @router.get("/me", response_model=User, status_code=status.HTTP_200_OK)
@@ -104,13 +123,19 @@ async def get_me(
     user_service: Annotated[UserService, Depends(get_user_service)],
     user_email: Annotated[str, Depends(get_email_current_user)],
 ):
+    ACTIVE_CONNECTIONS.labels(app="auth_service").inc()
+    start_time = time()
     try:
         user = await user_service.get_user_by_email(user_email)
+        REQUEST_DURATION.labels(method="GET", endpoint="/users/me").observe(time() - start_time)
         REQUEST_TOTAL.labels(method="GET", endpoint="/users/me", status_code="200").inc()
         return user
     except NotFoundException as e:
+        REQUEST_DURATION.labels(method="GET", endpoint="/users/me").observe(time() - start_time)
         REQUEST_TOTAL.labels(method="GET", endpoint="/users/me", status_code=str(e.status_code)).inc()
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    finally:
+        ACTIVE_CONNECTIONS.labels(app="auth_service").dec()
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_200_OK)
@@ -119,19 +144,25 @@ async def delete_user(
     user_email: Annotated[str, Depends(get_email_current_user)],
     user_service: Annotated[UserService, Depends(get_user_service)],
 ):
+    ACTIVE_CONNECTIONS.labels(app="auth_service").inc()
+    start_time = time()
     try:
         result = await user_service.delete_user(user_id=user_id, email=user_email)
+        REQUEST_DURATION.labels(method="DELETE", endpoint="/users/{user_id}").observe(time() - start_time)
         if result:
             REQUEST_TOTAL.labels(method="DELETE", endpoint=f"/users/{user_id}", status_code="200").inc()
             return {"success": "user deleted"}
         return {"failed": "user not deleted"}
     except NotFoundException as e:
+        REQUEST_DURATION.labels(method="DELETE", endpoint="/users/{user_id}").observe(time() - start_time)
         REQUEST_TOTAL.labels(
             method="DELETE",
             endpoint=f"/users/{user_id}",
             status_code=str(e.status_code),
         ).inc()
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    finally:
+        ACTIVE_CONNECTIONS.labels(app="auth_service").dec()
 
 
 @router.get("/metrics")
